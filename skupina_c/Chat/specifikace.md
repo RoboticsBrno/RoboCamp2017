@@ -20,9 +20,12 @@ Jednoduchý chat v rámci jedné chatovací místnosti.
 - Formát zprávy pro klienta:
     - `[1 znak přikaz][4 znaky binární IP adresa][data]'\0'`
 - Podporované příkazy:
-    - c (připojil se) `[přezdívka]`
-    - d (odpojil se) `[]`
-    - m (posílá zprávu) `[zpráva]`
-    - t (píše)
+    - poznámka: `pqrs` v příkladech můžou být libovolné znaky (i nesmyslené) -
+      je to binární IP adresa. Jedná se vždy o 4 znaky.
+    - c (připojil se) `[přezdívka]`, např. `cpqrsHonza\0`
+    - d (odpojil se) `[]`, např. `dpqrs\0`
+    - m (posílá zprávu) `[zpráva]`, např. `mpqrsAhoj světe\0`
+    - t (píše)  např. `tpqrs\0`
+    - a (k dispozici), např.`a\0\0\0\0cpqrsHonza\nabcdKuba\0`
         - co řádek, to IP adresa následovaná jménem
-    - w (uvítací zpráva) `[jméno]`
+    - w (uvítací zpráva) `[jméno]`, např. `w\0\0\0\0Pavel\0`
