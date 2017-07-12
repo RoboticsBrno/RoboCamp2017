@@ -11,8 +11,12 @@
 // WL_CONNECTION_LOST
 // WL_DISCONNECTED
 
+WiFiClient c;
+String s;
+
 
 void setup() {
+    c.write()
     Serial.begin(115200);
 
     WiFi.mode( WIFI_STA );
