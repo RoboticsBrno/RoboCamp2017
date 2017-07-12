@@ -26,6 +26,8 @@ Jednoduchý chat v rámci jedné chatovací místnosti.
     - d (odpojil se) `[]`, např. `dpqrs\0`
     - m (posílá zprávu) `[zpráva]`, např. `mpqrsAhoj světe\0`
     - t (píše)  např. `tpqrs\0`
-    - a (k dispozici), např.`a\0\0\0\0cpqrsHonza\nabcdKuba\0`
+    - a (k dispozici), např.`a\0\0\0\0pqrsHonza\nabcdKuba\0`
         - co řádek, to IP adresa následovaná jménem
     - w (uvítací zpráva) `[jméno]`, např. `w\0\0\0\0Pavel\0`
+    - k (keep alive) `[]`,  např. `k\0\0\0\0\0`, posílá server pro kontrolu, 
+      jestli klient žije, ignorovat (ale můžete zjistit, že server umřel)
