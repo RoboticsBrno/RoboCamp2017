@@ -37,7 +37,8 @@ class Message(object):
         self.ip = None
         self.data = None
 
-    def push(self, char):
+    def push(self, char, pr):
+        pr(self.progress)
         if self.progress == 0:
             self.command = char
             self.ip = ""
@@ -135,6 +136,9 @@ class ChatServer(object):
                 return socket
         return None
 
+    def notifyData(self, progress, char, address):
+        print("\t" + textIp(address) + ":" + str(progress) + " = " + str(ord(char)) + "(" + char + ")")
+
     def listenToClient(self, client, address):
         size = 1
         msg = Message()
@@ -143,7 +147,7 @@ class ChatServer(object):
                 data = client.recv(size)
                 if len(data):
                     for char in data:
-                        if msg.push(char):
+                        if msg.push(char, lambda x: self.notifyData(x, char, address) ):
                             continue
                         if msg.command == 'w':
                             self.handleWelcome(msg, address)
