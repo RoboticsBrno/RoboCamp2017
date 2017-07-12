@@ -11,11 +11,11 @@ Jednoduchý chat v rámci jedné chatovací místnosti.
     - varianta 1: Dedikovaný server na ESP
 - Typické použití/průběh komunikace (mějme X jako klienta):
     - X se připojí
-    - server notifikuje ostatní o připojení X
     - server X pošle uvítací zprávu
-        - mapování IP adresa -> přezdívku
-        - = seznam uživatelů online
     - X nastaví svoji přezdívku
+    - server X pošle mapování IP adresa -> přezdívku
+        - = seznam uživatelů online
+    - server notifikuje ostatní o připojení X
     - Server posílá keep alive zprávy, X je ignoruje
 - Formát zprávy pro klienta:
     - `[1 znak přikaz][4 znaky binární IP adresa][data]'\0'`
