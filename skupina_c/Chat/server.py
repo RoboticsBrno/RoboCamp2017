@@ -26,6 +26,20 @@ def prettyMessage(msg):
         return "Typing " + textIp(msg[1:5])
     return "Unknown message"
 
+def hexText(text):
+    firstLine = ""
+    secondLine = ""
+    for x in text:
+        secondLine += str(ord(x))
+        if x == "\n":
+            x = "\\n"
+        if x == "\r":
+            x = "\\r"
+        firstLine += x
+        firstLine += " " * (4 - len(firstLine) % 4)
+        secondLine += " " * (4 - len(secondLine) % 4)
+    return "\t" + firstLine + "\n\t" + secondLine
+
 def addressToBinary(address):
     x = map(int, address.split("."))
     return struct.pack("BBBB", x[0], x[1], x[2], x[3])
@@ -75,19 +89,24 @@ class ChatServer(object):
             thr2 = threading.Thread(target = self.keepAliveClient,args = (socket,42)).start()
 
     def broadcast(self, message):
-        print("Broadcasting: " + prettyMessage(message))
+        hex = ", ".join(map(str, map(ord, message)))
+        print("Broadcasting: " + prettyMessage(message));
+        print(hexText(message))
         for socket, client in self.clients.items():
             if not client[0]:
                 continue
             try:
-                self.lock.acquire()
+                # self.lock.acquire()
                 socket.send(message)
             except:
                 continue
             finally:
-                self.lock.release()
+                # self.lock.release()
+                pass
 
     def disconnectClient(self, socket):
+        if not socket in self.clients:
+            return
         client = self.clients[socket]
         if not client[0]:
             return
@@ -99,12 +118,13 @@ class ChatServer(object):
         while True:
             time.sleep(1)
             try:
-                self.lock.acquire()
+                # self.lock.acquire()
                 socket.send("k\x00\x00\x00\x00\x00")
             except:
                 self.disconnectClient(socket)
             finally:
-                self.lock.release()
+                # self.lock.release()
+                pass
 
     def handleWelcome(self, msg, address):
         sock = self.getClientByIpString(address)
@@ -114,7 +134,7 @@ class ChatServer(object):
         client = self.clients[sock]
         client = (msg.data, client[1])
         self.clients[sock] = client
-        self.broadcast("c" + address + msg.data)
+        self.broadcast("c" + address + msg.data + "\x00")
         self.sendOnlineTable(sock)
 
     def sendOnlineTable(self, socket):
@@ -124,11 +144,12 @@ class ChatServer(object):
                 msg += address + name + "\n"
         msg += "\x00"
         print("Sending to " + textIp(self.clients[socket][1]) + ": " + prettyMessage(msg))
+        print(hexText(msg))
         socket.send(msg)
 
     def forwardMessage(self, msg, address):
         msg.ip = address
-        self.broadcast(msg.command + msg.ip + msg.data)
+        self.broadcast(msg.command + msg.ip + msg.data + "\x00")
 
     def getClientByIpString(self, ipstring):
         for socket, client in self.clients.items():
@@ -141,21 +162,27 @@ class ChatServer(object):
 
     def listenToClient(self, client, address):
         size = 1
-        msg = Message()
         while True:
+            dirty = False
             try:
-                data = client.recv(size)
-                if len(data):
-                    for char in data:
-                        if msg.push(char, lambda x: self.notifyData(x, char, address) ):
-                            continue
-                        if msg.command == 'w':
-                            self.handleWelcome(msg, address)
-                        if msg.command in "mt":
-                            self.forwardMessage(msg, address)
-                        if msg.command == "a":
-                            self.sendOnlineTable(client)
+                msg = Message()
+                while True:
+                    data = client.recv(size)
+                    if len(data):
+                        for char in data:
+                            dirty = True
+                            if msg.push(char, lambda x: self.notifyData(x, char, address) ):
+                                continue
+                            dirty = False
+                            if msg.command == 'w':
+                                self.handleWelcome(msg, address)
+                            if msg.command in "mt":
+                                self.forwardMessage(msg, address)
+                            if msg.command == "a":
+                                self.sendOnlineTable(client)
             except socket.error, e:
+                if dirty:
+                    print("Timeout for " + textIp(address));
                 continue
 
 if __name__ == "__main__":
