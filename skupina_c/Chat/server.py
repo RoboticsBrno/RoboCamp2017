@@ -82,7 +82,7 @@ class ChatServer(object):
         while True:
             socket, address = self.sock.accept()
             address = addressToBinary(address[0]);
-            socket.settimeout(3)
+            socket.settimeout(1)
             self.clients[socket] = (None, address)
             print("New connection: " + textIp(address))
             thr1 = threading.Thread(target = self.listenToClient,args = (socket,address)).start()
@@ -96,12 +96,12 @@ class ChatServer(object):
             if not client[0]:
                 continue
             try:
-                # self.lock.acquire()
+                self.lock.acquire()
                 socket.send(message)
             except:
                 continue
             finally:
-                # self.lock.release()
+                self.lock.release()
                 pass
 
     def disconnectClient(self, socket):
@@ -118,18 +118,20 @@ class ChatServer(object):
         while True:
             time.sleep(1)
             try:
-                # self.lock.acquire()
+                self.lock.acquire()
                 socket.send("k\x00\x00\x00\x00\x00")
             except:
                 self.disconnectClient(socket)
             finally:
-                # self.lock.release()
-                pass
+                self.lock.release()
 
     def handleWelcome(self, msg, address):
         sock = self.getClientByIpString(address)
         if not sock:
             print("Warning: unknown client")
+            return
+        if len(msg.data) > 10:
+            print("No long names, please!")
             return
         client = self.clients[sock]
         client = (msg.data, client[1])
@@ -145,10 +147,19 @@ class ChatServer(object):
         msg += "\x00"
         print("Sending to " + textIp(self.clients[socket][1]) + ": " + prettyMessage(msg))
         print(hexText(msg))
-        socket.send(msg)
+        try:
+            self.lock.acquire()
+            socket.send(msg)
+        except:
+            return
+        finally:
+            self.lock.release()
 
     def forwardMessage(self, msg, address):
         msg.ip = address
+        if len(msg.data) > 50:
+            print("No long messages, please")
+            return
         self.broadcast(msg.command + msg.ip + msg.data + "\x00")
 
     def getClientByIpString(self, ipstring):
@@ -158,7 +169,8 @@ class ChatServer(object):
         return None
 
     def notifyData(self, progress, char, address):
-        print("\t" + textIp(address) + ":" + str(progress) + " = " + str(ord(char)) + "(" + char + ")")
+        pass
+        # print("\t" + textIp(address) + ":" + str(progress) + " = " + str(ord(char)) + "(" + char + ")")
 
     def listenToClient(self, client, address):
         size = 1
@@ -180,10 +192,13 @@ class ChatServer(object):
                                 self.forwardMessage(msg, address)
                             if msg.command == "a":
                                 self.sendOnlineTable(client)
-            except socket.error, e:
+            except socket.timeout:
                 if dirty:
                     print("Timeout for " + textIp(address));
                 continue
+            except socket.error, e:
+                print( textIp(address) + " E: ", e)
+                return
 
 if __name__ == "__main__":
     ChatServer('',int(sys.argv[1])).listen()
